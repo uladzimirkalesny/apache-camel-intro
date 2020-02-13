@@ -165,3 +165,78 @@ Routing with Camel
 
 В Apache Camel routing является более общей концепцией, которая определяется как пошаговое движение сообщения, которое исходит от endpoint в роли consumer.
 Consumer может получать message от внешней службы, опрашивать message в какой-либо системе или даже создавать само message.
+
+
+ЧТО ТАКОЕ JMS
+JMS (Java Message Service) - это Java API, который позволяет создавать, отправлять, получать и читать сообщения.
+Он также требует, чтобы обмен сообщениями был асинхронным и имел определенные элементы надежности, такие как гарантированная и однократная доставка.
+В JMS consumers и producers сообщений общаются друг с другом через посредника - destination JMS.
+Destination JMS м.б. либо queue либо topic.
+Queue - строго двухточечные, где каждое сообщение имеет только одного потребителя(consumer).
+Client A---Sends--->Queue---Consumes--->Client B
+
+Topics - работают по схеме publish/subscribe; одно сообщение может быть доставлено многим потребителям, если они подписались на эту тему
+                             <---Subscribe---
+                                                Client D
+Client C---Publishes--->Topic ---Delivers--->
+                              <---Subscribe---
+                                                Client E
+                               ---Delivers--->
+
+JMS также предоставляет ConnectionFactory, которую клиенты (например, Camel) могут использовать для создания соединения с поставщиком JMS.
+JMS-провайдеров обычно называют брокерами, поскольку они управляют связью между производителем сообщений и потребителем сообщений.
+
+
+HOW TO CONFIGURE CAMEL TO USE A JMS PROVIDER
+Чтобы подключить Camel к определенному провайдеру JMS, вам нужно настроить компонент JMS Camel с соответствующей ConnectionFactory
+Apache ActiveMQ является одним из самых популярных JMS-провайдеров и является основным JMS-брокером, который Camel использует для тестирования компонента JMS.
+
+ConnectionFactory connectionFactory = новый ActiveMQConnectionFactory ("vm://localhost"); - местоположение активного доступа
+
+CamelContext camelContext = new DefaultCamelContext();
+camelContext.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+
+
+USING URIS TO SPECIFY THE DESTINATION
+Допустим, вы хотите отправить сообщение JMS в очередь с именем messagesOrders. URI в этом случае будет
+jms:queue:incomingOrders
+Префикс «jms» означает компонент JMS, который настроили ранее.
+Указывая «queue», компонент JMS знает, что нужно отправить в очередь с именем incomingOrders
+
+Можно опустить спецификатор queue, потому что по умолчанию используется отправка в queue, а не в topic.
+The JMS component is discussed here: http://camel.apache.org/jms.html.
+
+Используя Java DSL Camel, вы можете отправить сообщение в queue incomingOrdersй с помощью ключевого слова to, например:
+.to("jms:queue:incomingOrders")
+
+
+CREATING ROUTES IN JAVA
+Метод addRoutes CamelContext принимает RoutesBuilder, а не только RouteBuilder. Интерфейс RoutesBuilder имеет единственный определенный метод:
+void addRoutesToCamelContext(CamelContext context) throws Exception
+Это означает, что вы можете использовать свой собственный класс для построения routes Camel.
+Однако наиболее распространенным способом построения routes является использование класса RouteBuilder, который реализует RoutesBuilder.
+Класс RouteBuilder также предоставляет вам доступ к Java DSL Camel для создания route.
+
+
+Using the RouteBuilder
+Абстрактный класс org.apache.camel.builder.RouteBuilder в Camel - это тот, который вы будете часто видеть.
+Вам нужно будет использовать его каждый раз, когда вы создаете route в Java.
+Чтобы использовать класс RouteBuilder, вы расширяете его класс и реализуете метод configure:
+class MyRouteBuilder extends RouteBuilder {
+    public void configure() throws Exception {
+        ...
+    }
+}
+Затем вам нужно добавить класс в CamelContext с помощью метода addRoutes:
+CamelContext context = new DefaultCamelContext();
+context.addRoutes(new MyRouteBuilder());
+
+Кроме того, вы можете объединить конфигурацию RouteBuilder и CamelContext, добавив анонимный класс RouteBuilder непосредственно в CamelContext, например:
+CamelContext context = new DefaultCamelContext();
+context.addRoutes(new RouteBuilder() {
+    public void configure() throws Exception {
+        ...
+    }
+});
+
+

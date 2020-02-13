@@ -5,7 +5,7 @@ import org.apache.camel.spring.SpringCamelContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-public class FileCopierWithSpring {
+public class FileCopierWithCamelSpringDSL {
     public static void main(String[] args) throws Exception {
         ApplicationContext springContext = new ClassPathXmlApplicationContext("classpath:app-context.xml");
         CamelContext camelContext = new SpringCamelContext(springContext);

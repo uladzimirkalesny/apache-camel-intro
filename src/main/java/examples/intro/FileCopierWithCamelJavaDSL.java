@@ -4,7 +4,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
 
-public class FileCopierWithCamel {
+public class FileCopierWithCamelJavaDSL {
     public static void main(String[] args) throws Exception {
         CamelContext camelContext = new DefaultCamelContext();
         camelContext.addRoutes(new RouteBuilder() {
