@@ -1,0 +1,51 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+            http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://camel.apache.org/schema/spring
+            http://camel.apache.org/schema/spring/camel-spring.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="examples.cbr.processors" />
+
+    <bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="vm://localhost"/>
+            </bean>
+        </property>
+    </bean>
+
+<!--    Without annotation @Component-->
+<!--    <bean id="xmlLogProcessor" class="examples.cbr.processors.XmlLogProcessor"/>-->
+<!--    <bean id="csvLogProcessor" class="examples.cbr.processors.CsvLogProcessor"/>-->
+<!--    <bean id="textLogProcessor" class="examples.cbr.processors.TextLogProcessor"/>-->
+
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+
+        <route>
+            <from uri="file:src/main/java/examples/cbr/data?noop=true"/>
+            <choice>
+                <when>
+                    <simple>${header.CamelFileName} regex '^.*xml$'</simple>
+                    <process ref="xmlLogProcessor"/>
+                    <to uri="file:src/main/java/examples/cbr/data/xml"/>
+                </when>
+                <when>
+                    <simple>${header.CamelFileName} regex '^.*csv'</simple>
+                    <process ref="csvLogProcessor"/>
+                    <to uri="file:src/main/java/examples/cbr/data/csv"/>
+                </when>
+                <otherwise>
+                    <to uri="file:src/main/java/examples/cbr/data/text"/>
+                    <process ref="textLogProcessor"/>
+                    <stop/>
+                </otherwise>
+            </choice>
+        </route>
+    </camelContext>
+
+</beans>
