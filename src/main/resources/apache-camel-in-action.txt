@@ -240,3 +240,98 @@ context.addRoutes(new RouteBuilder() {
 });
 
 
+JAVA DSL
+(DSL) - это компьютерные языки, нацеленные на конкретную проблемную область, а не на область общего назначения, как большинство языков программирования.
+Домен Camel - это корпоративная интеграция, поэтому Java DSL, по сути, представляет собой набор гибких интерфейсов, которые содержат методы, названные в честь терминов из книги EIP.
+Каждый оператор Java, который начинается с метода from в RouteBuilder, создает новый route.
+Теперь этот новый route завершает вашу первую задачу в Rider Auto Parts - получение заказов с FTP-сервера и отправка их в очередь JMS incomingOrders.
+public class RiderCamelJmsJavaDSL {
+    public static void main(String[] args) throws Exception {
+        CamelContext camelContext = new DefaultCamelContext();
+
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost");
+        camelContext.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+        camelContext.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("ftp://rider.com/orders?username=rider&password=secret").to("jms:incomingOrders");
+            }
+        });
+
+        camelContext.start();
+        Thread.sleep(10000);
+
+        camelContext.stop();
+    }
+}
+
+Метод from сообщает Camel, что нужно принимать сообщения от endpoint FTP, и метод to инструктирует Camel отправлять сообщения в endpoint JMS.
+Выходные данные потребителя FTP поступают на вход производителя JMS. Преобразование полезной нагрузки из файла в сообщение JMS выполняется автоматически.
+преобразования типа файла FTP в тип сообщения JMS - это было сделано автоматически с помощью средства TypeConverter.
+
+
+ADDING A PROCESSOR
+В середине route можно получить доступ подключаться к потокам или внедрять поведение в функции, используя processors.
+Интерфейс Processor в Camel является важным строительным блоком сложных routes. Это простой интерфейс с одним методом:
+public void process(Exchange exchange) throws Exception;
+Это дает вам полный доступ к обмену сообщениями, позволяя вам делать практически все, что вы хотите с полезной нагрузкой или заголовками. 
+Многие компоненты, такие как FileComponent и FtpComponent, устанавливают полезные заголовки, описывающие полезную нагрузку входящего сообщения. 
+В предыдущем примере вы использовали заголовок CamelFileName, чтобы получить имя файла, который был загружен через FTP.
+
+
+Spring DSL
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://camel.apache.org/schema/spring
+    http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="vm://localhost"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="downloadLogger" class="examples.rider.DownloadLogger"/>
+
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+        <route>
+            <from uri="file:src/data?noop=true"/>
+            <process ref="downloadLogger"/>
+            <to uri="jms:incomingOrders"/>
+        </route>
+    </camelContext>
+
+</beans>
+
+public class DownloadLogger implements Processor {
+    @Override
+    public void process(Exchange exchange) throws Exception {
+        System.out.println("We just downloaded: " + exchange.getIn().getHeader("CamelFileName"));
+    }
+}
+
+
+Routing and EIPs
+Using a content-based router
+Content-Based Router (CBR) - это message router, который направляет сообщение в пункт назначения на основе его содержимого.
+Контент может представлять собой заголовок сообщения, тип данных полезной нагрузки, часть самой полезной нагрузки - почти все, что происходит при обмене сообщениями.
+Чтобы выполнить условную маршрутизацию, требуемую CBR, Camel вводит несколько ключевых слов в DSL. 
+Метод choice создает processor CBR, и условия добавляются следующим выбором с комбинацией метода when и предиката.
+
+from("jms:incomingOrders")
+	.choice()
+		.when(predicate)
+			.to("jms:xmlOrders")
+		.when(predicate)
+			.to("jms:csvOrders");
+predicate - интерфейс Predicate имеет метод matches(Exchange exchange)
+
+Внутри RouteBuilder вы можете начать с использования метода, который возвращает выражение, которое будет соответствовать значению заголовка
+
+header("CamelFileName").endsWith(".xml")
+
