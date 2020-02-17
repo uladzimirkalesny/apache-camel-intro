@@ -16,6 +16,8 @@
         <slf4j-log4j12.version>1.7.30</slf4j-log4j12.version>
         <lombok.version>1.18.10</lombok.version>
         <activemq.version>5.7.0</activemq.version>
+        <xbean-spring.version>4.16</xbean-spring.version>
+        <camel-language.version>3.0.1</camel-language.version>
     </properties>
 
     <dependencyManagement>
@@ -82,6 +84,12 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.xbean</groupId>
+            <artifactId>xbean-spring</artifactId>
+            <version>${xbean-spring.version}</version>
         </dependency>
     </dependencies>
 
