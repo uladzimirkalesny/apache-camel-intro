@@ -15,7 +15,7 @@
         <camel-core.version>3.0.1</camel-core.version>
         <slf4j-log4j12.version>1.7.30</slf4j-log4j12.version>
         <lombok.version>1.18.10</lombok.version>
-        <activemq-core.version>5.7.0</activemq-core.version>
+        <activemq.version>5.7.0</activemq.version>
     </properties>
 
     <dependencyManagement>
@@ -70,7 +70,13 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-core</artifactId>
-            <version>${activemq-core.version}</version>
+            <version>${activemq.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-all</artifactId>
+            <version>${activemq.version}</version>
         </dependency>
 
         <dependency>
